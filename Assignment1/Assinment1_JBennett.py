@@ -6,7 +6,12 @@ from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.ensemble import RandomForestClassifier
 import math
 import multiprocessing
-from sklearn.metrics import make_scorer, roc_auc_score
+from sklearn.metrics import classification_report, roc_curve, auc, confusion_matrix
+import pickle
+from sklearn.multiclass import OneVsRestClassifier
+from sklearn.preprocessing import label_binarize
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 def get_csv(csv_name: str) -> pd.DataFrame:
@@ -106,31 +111,49 @@ def train_rf(X_train, y_train, random_state = 42, param_grid=None, cv=5, scoring
 
     # gets number of trees
     n_trees = [50, 100, 200, 300, 500]
-    # gets hyperparameter test ranges relative to the size of the training data 
-    # hyperparameter conventions drive me crazy (because I dont really appreciate why the are what they are but the matter)
+
+    # gets hyperparameter candidate ranges relative to the size of the training data 
+    # hyperparameter conventions drive me crazy (because I dont really appreciate why the are what they are but they matter)
     # I am looking for ways to define them systematically
 
-    # depth to build the rage around
+    # max_depth value to build the range around
     base_depth = math.log2(length_train)
-    # heuristic length of max_depths tests
-    n_exponents = max(8, int(base_depth))
-    depth_range = math.log10(length_train)
-    # this can be better but I wanted to not get too carried away right now
-    trials = np.linspace(1 - 0.5*depth_range, 1 + 0.5*depth_range, n_exponents)
 
-    max_depths = [max(2, int(base_depth*t)) for t in trials]
+    # heuristic length of max_depths tests
+    depth_candidate_list = max(8, int(base_depth))
+
+    # 
+    depth_range = math.log10(length_train)
+
+    # this can be better but I wanted to not get too carried away right now
+    exponent_values = np.linspace(1 - 0.5*depth_range, 1 + 0.5*depth_range, depth_candidate_list)
+
+    # makes depths list
+    max_depth_candidates = [max(2, int(base_depth*exp)) for exp in exponent_values]
+
+    # handles redundancies in depth_candidates
+    unique_depths = np.unique(max_depth_candidates)
+    if len(unique_depths) < depth_candidate_list:
+        max_depth_candidates = np.linspace(min(unique_depths), max(unique_depths), depth_candidate_list, dtype=int)
 
     # handles the minimum number of records in a node to split on 
-    min_splits = [max(2, int(length_train * f)) for f in [0.01, 0.02, 0.05]]
+    frac_train_set = [0.01, 0.02, 0.05, 0,1, 0.15]
+    min_split_candidates = [max(2, int(length_train * f)) for f in frac_train_set]
+
+
+    # handles redundancies in depth candidates
+    unique_splits = np.unique(min_split_candidates)
+    if len(unique_splits) < depth_candidate_list:
+        unique_splits = np.linspace(min(unique_splits), max(unique_splits), depth_candidate_list, dtype=int)
 
     # dict is a arg for GridSearchCV
     param_grid = {
         'n_estimators': n_trees,
-        'max_depth': max_depths,
-        'min_samples_split': min_splits,
+        'max_depth': max_depth_candidates,
+        'min_samples_split': min_split_candidates,
     }
 
-
+    # allocates cores for efficiency
     total_cores = multiprocessing.cpu_count()
     n_jobs = max(1, total_cores - 2)
 
@@ -155,7 +178,7 @@ def train_rf(X_train, y_train, random_state = 42, param_grid=None, cv=5, scoring
     results_df = results_df[display_columns].sort_values(by='mean_test_score', ascending=False).reset_index(drop=True)
 
     results_df['test_train_gap'] = results_df['mean_train_score'] - results_df['mean_test_score']
-    
+
     # makes model with best hyperparams
     best_model = grid_search.best_estimator_
     
@@ -165,8 +188,7 @@ def train_rf(X_train, y_train, random_state = 42, param_grid=None, cv=5, scoring
        'best_model': best_model
     }
 
-
-# >>>>>>>>>>>>>>>>>>>>>>>> driver code <<<<<<<<<<<<<<<<<<<<<<<
+# # >>>>>>>>>>>>>>>>>>>>>>>> driver code <<<<<<<<<<<<<<<<<<<<<<<
 if __name__ == "__main__":
 
     ### Initial evaluation of dataset
@@ -218,4 +240,81 @@ if __name__ == "__main__":
     model_dict = train_rf(X_train, y_train)
 
     print(model_dict['best_hyperparams'])
-    print(model_dict['validation_results'])
+
+    # prints the top 5 results table of the model fitting with h-param tuning
+    validation_table = model_dict['validation_results'][['params','mean_test_score','test_train_gap']].head()
+
+    print(model_dict['validation_results'][['params','mean_test_score','test_train_gap']].head())
+
+#     # save the top five to csv to convert to table in the report
+#     validation_table.to_csv('data/best_model.csv', index = False)
+
+#     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#     # saves train_rf dict so I can stop rerunning it ;)
+#     with open('model_dict.pkl', 'wb') as f:
+#         pickle.dump(model_dict, f)
+#     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#     # gets the best model from storage
+#     with open('model_dict.pkl', 'rb') as f:
+#        model_dict = pickle.load(f)
+#     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+    best_model = model_dict['best_model']
+
+    # Predicting from the best model
+    y_pred = best_model.predict(X_test)
+
+    # gets performance results 
+    performance_report = classification_report(y_test,y_pred)
+    print(performance_report)
+
+    #binarization of the y_test values
+    classes = np.unique(y_test)
+    y_test_binaries = label_binarize(y_test, classes=classes)
+
+    # creates auc scores
+
+    ## wraps best model in one vs rest classifier
+    best_model_ovr = OneVsRestClassifier(best_model)
+
+    ## fits the wrapped model
+    best_model_ovr.fit(X_train, y_train)
+    y_score = best_model_ovr.predict_proba(X_test) 
+
+    ## get roc and auc values per class
+    fpr = dict()
+    tpr = dict()
+    roc_auc = dict()
+
+    for i, cls in enumerate(classes):
+        fpr[i], tpr[i], _ = roc_curve(y_test_binaries[:, i], y_score[:, i])
+        roc_auc[i] = auc(fpr[i], tpr[i])
+
+
+    plt.figure(figsize=(8, 6))
+
+    for i, cls in enumerate(classes):
+        plt.plot(fpr[i], tpr[i], lw=2, label=f'Class {cls} (AUC = {roc_auc[i]:.2f})')
+        plt.fill_between(fpr[i], tpr[i], alpha=0.1) 
+
+    plt.plot([0, 1], [0, 1], 'k--', lw=2)
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('ROC Curves for Mobile Phone Price Ranges')
+    plt.legend(loc='lower right')
+    plt.show()  
+
+
+    # creates heat-mapped confusion matrix
+    cm = confusion_matrix(y_test, y_pred)
+
+    plt.figure(figsize=(5,4))
+    sns.heatmap(cm, annot=True, fmt="d", cmap="Greens", cbar=False)
+    plt.xlabel("Predicted")
+    plt.ylabel("True")
+    plt.title("Multi-Class Random Forest Confusion Matrix")
+    plt.tight_layout()
+    plt.savefig("confusion_matrix.png", dpi=300)
+    plt.close() 

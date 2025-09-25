@@ -1,0 +1,6 @@
+params,mean_test_score,test_train_gap
+"{'max_depth': np.int64(15), 'min_samples_split': 2, 'n_estimators': 500}",0.9786119243105199,0.02138807568948009
+"{'max_depth': np.int64(18), 'min_samples_split': 2, 'n_estimators': 500}",0.9783062641106349,0.021693735889365073
+"{'max_depth': np.int64(27), 'min_samples_split': 2, 'n_estimators': 500}",0.9782677901917559,0.021732209808244085
+"{'max_depth': np.int64(24), 'min_samples_split': 2, 'n_estimators': 500}",0.9782677901917559,0.021732209808244085
+"{'max_depth': np.int64(15), 'min_samples_split': 2, 'n_estimators': 300}",0.9782495934727715,0.021750406527228483
