@@ -1,0 +1,8 @@
+Your submission was successful!
+Course: 43892-202540, CS569: Machine Learning (Fall Term 2025)
+Assessment: Assignment 1 - Random Forest & Evaluation
+
+Submission date: 9/24/25, 10:38 PM (EDT)
+Submission size: 356.3 KB
+Submitter: John Bennett
+Confirmation number: 26378cddd9b0434e88c44d3181fc4657

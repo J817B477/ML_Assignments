@@ -1,0 +1,8 @@
+Your submission was successful!
+Course: 43892-202540, CS569: Machine Learning (Fall Term 2025)
+Assessment: Assignment 0: Load Data
+
+Submission date: 9/10/25, 7:34 PM (EDT)
+Submission size: 245.7 KB
+Submitter: John Bennett
+Confirmation number: a19ee594cdcc48cf867d53c3bbb5cfdb
