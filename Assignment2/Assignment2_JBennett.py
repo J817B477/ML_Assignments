@@ -144,9 +144,25 @@ def get_train_target(df: pd.DataFrame, target: str)-> tuple[pd.Series,pd.DataFra
 
     return X,y
 
-def train_knn(df: pd.DataFrame, k_candidates: list, 
+def train_knn(k_candidates: list, 
               X_train, y_train, 
               X_test, y_test)->dict:
+  '''
+    Performs training of k-nearest neighbors model over set of k candidate
+    hyperparameters; provides performance measures & plots
+
+    params:
+      - list of k-candidates
+      - training (feature tuple set and associated targets) and testing sets
+
+    returns: dict including
+      - classification report for each k (performance measures/class)
+      - overall performance for each k (aggregate performance measures)
+      - confusion matrix for each k
+      - model for each k
+      - accuracy vs k-candidate for all parameters
+
+  '''
   
   scaler = StandardScaler()
   X_train_scaled = scaler.fit_transform(X_train)
@@ -263,7 +279,7 @@ if __name__ == "__main__":
   k_candidates = list(range(1,17,2))
   
   # gets models
-  models = train_knn(df, k_candidates, X_train, y_train, X_test, y_test)
+  models = train_knn(k_candidates, X_train, y_train, X_test, y_test)
 
 
 
