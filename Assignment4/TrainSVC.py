@@ -2,8 +2,9 @@
 John Bennett
 Assignment 4: Support Vector Machines
 Fall 2025
+Script: TrainSVC.py
 
-approach: This script is designed to rely on argparse to input arguments when calling the script with flags from the terminal. In accordance with this, the results of each script are stored in a pickle that will be called from another script designed to parse the results of those terminal calls. The calls will be handled by a bash script and all of the steps that are not simple calls are written into functions that are called when __name__ is __Main__. A sklearn Pipeline object handles the fitting of the svm model for each terminal call of this script. 
+Approach: This script is designed to rely on argparse to input arguments when calling the script with flags from the terminal. In accordance with this, the results of each script call is stored in a pickle that will be called from another script (parse_results.py) designed to parse the results of those terminal calls. The calls to both scripts will be handled by a bash script (generate_models.sh). 
 '''
 import pandas as pd
 import os
@@ -112,9 +113,12 @@ def get_train_target(df: pd.DataFrame, target: str)-> tuple[pd.Series,pd.DataFra
 # store results of model training and testing to pickle
 def store_results(file_name: str, new_dict: dict, ) -> None:
   '''
-  Function that handles storage of collected outputs from Support Vector Machine model training
-  '''
+  helper function that handles storage of collected outputs from Support Vector Machine model training
 
+  parameters: 
+  - file_name: name of file to store the result dictionaries in
+  - new_dict: dictionary containing results to be added to the results file
+  '''
 
   # brings in any preexisting results to append new results to
   if os.path.isfile(file_name):
@@ -135,6 +139,14 @@ def store_results(file_name: str, new_dict: dict, ) -> None:
 
 # Trains model: with terminal args
 def train_svm(source_data: pd.DataFrame, target_name: str, args: argparse.ArgumentParser):
+
+  '''
+  function that handles training of an svm classifier while permanently storing its results in a pickle file; specifically geared towards use of terminal arguments
+
+  parameters:
+  - source data: for training the model
+  - target_name: name of the classifier feature in the source data
+  '''
   X,y = get_train_target(source_data, target_name)
   X_train, X_test, y_train, y_test = train_test_split(
     X,y,
@@ -149,6 +161,7 @@ def train_svm(source_data: pd.DataFrame, target_name: str, args: argparse.Argume
     print("Warning: for linear model, gamma argument ignored.")
     args.gamma = None
 
+    # generates ml pipeline specific to linear kernels
     pipe = Pipeline(
       steps=[
           ("scaler", StandardScaler()),
@@ -156,6 +169,7 @@ def train_svm(source_data: pd.DataFrame, target_name: str, args: argparse.Argume
       ]
     )
 
+    # fits model while collecting training time
     start = time.time()
     pipe.fit(X_train,y_train)
     end = time.time()
@@ -164,6 +178,12 @@ def train_svm(source_data: pd.DataFrame, target_name: str, args: argparse.Argume
     model_key = f"{args.kernel}_{args.C}"
 
   else: 
+
+    # handles multiple data types of terminal arguments generated from shell script
+    if args.gamma != 'scale':
+      args.gamma = float(args.gamma)
+
+    # generates ml pipeline specific to nonlinear kernels
     pipe = Pipeline(
         steps=[
             ("scaler", StandardScaler()),
@@ -171,6 +191,7 @@ def train_svm(source_data: pd.DataFrame, target_name: str, args: argparse.Argume
         ]
     )
 
+    # fits model while collecting training time
     start = time.time()
     pipe.fit(X_train,y_train)
     end = time.time()
@@ -183,15 +204,15 @@ def train_svm(source_data: pd.DataFrame, target_name: str, args: argparse.Argume
 
   # results dict: locals allows dynamic variable naming
   results_dict = {
-     'model': pipe,
-     'c_scalar': args.C,
-     'gamma': args.gamma,
-     'number_support_vectors': pipe.named_steps["svm"].n_support_,
-     'training_time': end-start,
-     'accuracy': accuracy_score(y_test, y_pred),
-     'classification_report': classification_report(y_test,y_pred),
-     'confusion_matrix': confusion_matrix(y_test, y_pred),
-     'training_time': end-start
+    'kernel_type': args.kernel,
+    'c_scalar': args.C,
+    'gamma': args.gamma,
+    'accuracy': accuracy_score(y_test, y_pred),
+    'number_support_vectors': pipe.named_steps["svm"].n_support_,
+    'training_time': end-start,
+    'classification_report': classification_report(y_test,y_pred, zero_division=0),
+    'confusion_matrix': confusion_matrix(y_test, y_pred),
+    'model': pipe
   }
 
   # call store_results() to add new dict to pickle
@@ -199,7 +220,13 @@ def train_svm(source_data: pd.DataFrame, target_name: str, args: argparse.Argume
 
 
 # handles terminal arguments
-def get_arg():
+def get_arg()-> argparse.Namespace:
+  '''
+  functions generates the valid terminal arguments that can be provided with terminal calls of this script
+
+  parameters: none
+  return: Namespace class instance that stores added arguments as attributes; attributes of object can then be extracted using member operator
+  '''
   #creates parser object
   parser = argparse.ArgumentParser (description= "Handles arguments passed for defining hyperparameters for training SVM models on randomly generated fixed arbitrary dataset.")
 
@@ -209,7 +236,7 @@ def get_arg():
   # hyperparameters
   parser.add_argument("--kernel", type=str, default="linear", choices=["linear", "rbf", "poly", "sigmoid"])
   parser.add_argument("--C", type=float, default=1.0)
-  parser.add_argument("--gamma", type=float, default=0.1)
+  parser.add_argument("--gamma", type=str, default='0.1')
   parser.add_argument("--test_size", type=float, default=0.2)
   parser.add_argument("--seed", type=int, default=42)
   return parser.parse_args()
@@ -218,9 +245,10 @@ def get_arg():
 ############# Driver Code ############
 
 if __name__ == "__main__":
-  ## choose one of the dataset options
+
+  ## chooses one of the dataset options from the assignment
   X,y = datasets.make_classification(
-    n_samples=40000,
+    n_samples=1250,
     n_features=10,
     n_informative=10,
     n_redundant=0,
@@ -249,8 +277,3 @@ if __name__ == "__main__":
   ## train model with train_svm() call
   train_svm(df,"target", args)
 
-# import pickle
-# with open("results.pkl", "rb") as f:
-#   results = pickle.load(f)
-
-# print(results)

@@ -1,0 +1,6 @@
+# ignores any folder within the assignment folder itself (logic being that the code generates all of this content)
+*/*/
+
+# ignores sipped version of assignment created for submission
+*.zip
+*.pkl
