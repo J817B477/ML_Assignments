@@ -1,1 +1,2 @@
-['x_1','x_2']
+  k_candidates = range(1,11)
+  print(k_candidates)
