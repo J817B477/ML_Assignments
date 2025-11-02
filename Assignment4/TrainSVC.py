@@ -212,6 +212,8 @@ def train_svm(source_data: pd.DataFrame, target_name: str, args: argparse.Argume
     'training_time': end-start,
     'classification_report': classification_report(y_test,y_pred, zero_division=0),
     'confusion_matrix': confusion_matrix(y_test, y_pred),
+    'feature_vectors': X,
+    'target_vector': y,
     'model': pipe
   }
 
@@ -260,7 +262,7 @@ if __name__ == "__main__":
     hypercube=True
   )
 
-  # for the sake of emulating real dataset
+  # for the sake of imitate real dataset, X and y combined
   feature_names = [f'feature_{i}' for i in range(X.shape[1])]
 
   X = pd.DataFrame(X,columns=feature_names)

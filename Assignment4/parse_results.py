@@ -12,7 +12,10 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import os
 import warnings
-warnings.filterwarnings("ignore")
+from sklearn.decomposition import PCA
+import numpy as np
+from sklearn.svm import SVC
+warnings.filterwarnings("ignore") # nuisance 
 
 # retrieves results: separates metadata & model data
 def get_results(results_file: str):
@@ -129,13 +132,13 @@ if __name__ == "__main__":
   print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\nModel Performance Information\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")  
 
   # stores csvs
-  new_project_folder("performance_tables")
+  new_project_folder("performance_tables_plots")
 
-  ## performance tables for reporting
+  #### performance tables for reporting ####
 
   # Full table
   performance_table = create_performance_table(models)
-  performance_table.to_csv("performance_tables/performance_table.csv")
+  performance_table.to_csv("performance_tables_plots/performance_table.csv")
 
   print(f"""  Performance Table:
   {performance_table}
@@ -144,7 +147,7 @@ if __name__ == "__main__":
   # most accurate models table
   top_accuracy = performance_table.sort_values("Test Accuracy", ascending=False)
   top_accuracy = top_accuracy[top_accuracy["Test Accuracy"] >= .80]
-  top_accuracy.to_csv("performance_tables/performance_table_topAccuracy.csv")
+  top_accuracy.to_csv("performance_tables_plots/performance_table_topAccuracy.csv")
   print(f""" Top Accuracy:
   {top_accuracy}
   """)
@@ -152,7 +155,7 @@ if __name__ == "__main__":
 
   # best training time table
   top_time = performance_table.sort_values("Training Time", ascending=True).iloc[:15,:]
-  top_time.to_csv("performance_tables/performance_table_topTime.csv")
+  top_time.to_csv("performance_tables_plots/performance_table_topTime.csv")
   print(f""" Top Training Time:
   {top_time}
   """) 
@@ -165,16 +168,17 @@ if __name__ == "__main__":
   
 
 
-  top_SVs.to_csv("performance_tables/performance_table_topSVs.csv")
+  top_SVs.to_csv("performance_tables_plots/performance_table_topSVs.csv")
 
   print(f""" Top Complexity:
   {top_SVs}
   """) 
 
-  print(top_SVs.to_latex())
+  # # for report
+  # print(top_SVs.to_latex())
 
 
-  ## figures for reporting
+  #### figures for reporting ####
 
   # uniform color scaling values for heatmaps
   color_min = min(performance_table['Test Accuracy'])
@@ -210,3 +214,94 @@ if __name__ == "__main__":
       plt.savefig(f"model_accuracy_comparison/{k}_accuracy_hmap.pdf")
       plt.show()
       print(f"model_accuracy_comparison/{k}_accuracy_bplot.pdf created")
+
+  #### best model decision boundary with support vectors
+  print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\nBest Model Decision Boundary Plot \n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+
+  best_model_key = max(models, key=lambda k: models[k]["accuracy"])
+  best_model = models[best_model_key]
+
+  # extracts model training data
+  X = best_model['feature_vectors']
+  y = best_model['target_vector']
+
+  # scales feature vectors
+  scaler = best_model['model'].named_steps['scaler']
+  X_scaled = scaler.transform(X)
+
+  # projects feature vectors onto 2d plain
+  pca = PCA(n_components=2)
+  X_pca = pca.fit_transform(X_scaled)
+
+  # 2d grid space for 
+  xx, yy = np.meshgrid(
+      np.linspace(X_pca[:, 0].min() - 1, X_pca[:, 0].max() + 1, 300),
+      np.linspace(X_pca[:, 1].min() - 1, X_pca[:, 1].max() + 1, 300)
+  )
+  grid_pca = np.c_[xx.ravel(), yy.ravel()]
+
+  # Map grid back to approximate 10D space
+  grid_10D_approx = grid_pca @ pca.components_[:2, :] + X_scaled.mean(axis=0)
+
+  # Predict decision values from original high-D model
+  Z = best_model['model'].named_steps['svm'].decision_function(grid_10D_approx)
+  Z = Z.reshape(xx.shape)
+
+  # plots projection of decision boundary onto  2d space
+  plt.figure(figsize=(8, 6))
+  plt.contourf(xx, yy, Z, alpha=0.35, cmap=plt.cm.coolwarm)
+  plt.contour(xx, yy, Z, levels=[0], colors='k', linewidths=1.25)
+  plt.suptitle("Projected Multidimensional Decision Boundary", fontsize=16)
+  plt.title(f"True 10D model projected into PCA space\n"
+            f"Kernel={best_model['kernel_type']}, C={best_model['c_scalar']}, Gamma={best_model['gamma']}",
+            fontsize=11)
+  plt.xlabel('PC1')
+  plt.ylabel('PC2')
+  plt.tight_layout()
+  plt.savefig("performance_tables_plots/best_model_boundary_projected.pdf")
+  plt.close()
+
+
+
+  # plots representative decision boundary with data
+  plt.figure(figsize=(8, 6))
+  svm_2d = SVC(kernel=best_model['kernel_type'],
+                C=best_model['c_scalar'],
+                gamma=best_model['gamma'])
+  svm_2d.fit(X_pca, y)
+
+  xx2, yy2 = np.meshgrid(
+      np.linspace(X_pca[:, 0].min() - 1, X_pca[:, 0].max() + 1, 300),
+      np.linspace(X_pca[:, 1].min() - 1, X_pca[:, 1].max() + 1, 300)
+  )
+  grid2 = np.c_[xx2.ravel(), yy2.ravel()]
+  Z2 = svm_2d.predict(grid2).reshape(xx2.shape)
+
+  plt.contourf(xx2, yy2, Z2, alpha=0.25, cmap=plt.cm.coolwarm)
+  plt.contour(xx2, yy2, Z2, levels=[0], colors='k', linewidths=1.25)
+  plt.scatter(X_pca[:, 0], X_pca[:, 1], c=y, cmap=plt.cm.coolwarm,
+              edgecolor='k', s=10, label='Training Points')
+
+  svs_2d = svm_2d.support_vectors_
+  plt.scatter(svs_2d[:, 0], svs_2d[:, 1],
+              facecolors='none', edgecolors='k', s=15,
+              linewidths=1.5, label='Support Vectors')
+
+  plt.suptitle("2D Visualization SVM Decision Boundary", fontsize=16)
+  plt.title(f"SVM trained on PCA-reduced space\n"
+            f"Kernel={best_model['kernel_type']}, C={best_model['c_scalar']}, Gamma={best_model['gamma']}",
+            fontsize=11)
+  plt.xlabel('PC1')
+  plt.ylabel('PC2')
+  plt.legend()
+  plt.tight_layout()
+  plt.savefig("performance_tables_plots/best_model_boundary_PCA2D.pdf")
+  plt.close()
+
+  print(f""" Decision boundary plots created:
+        performance_tables_plots/best_model_boundary_projected.pdf
+        performance_tables_plots/best_model_boundary_PCA2D.pdf
+        """
+  )
+
+
