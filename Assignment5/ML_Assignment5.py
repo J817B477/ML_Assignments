@@ -327,7 +327,4 @@ if __name__ == "__main__":
   print(f"""
     Comparative Clusters ARI score = {adjusted_rand_score(myLabels,skLabels)}
   """)
-
-
-
-    
+  
