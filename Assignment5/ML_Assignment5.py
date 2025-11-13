@@ -3,6 +3,9 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
+from scipy.optimize import linear_sum_assignment
+from sklearn.metrics import confusion_matrix, adjusted_rand_score
+
 
 # function: makes new project folder
 def new_project_folder(folder_name: str)-> None:
@@ -46,9 +49,11 @@ def a_kmeans(df:pd.DataFrame, k:int, max_training_iter = 300, cent_disp_threshol
   else:
     rng = np.random.default_rng(seed)
 
-  # selects seed value for each model candidate
+  # selects seed values: one for each model candidate
   # if seed parameter = none, then list is different each time function is called
   training_seeds = rng.integers(low = 0, high = 2**32, size=n_init)
+
+
   ## constant structures
   # converts to matrix for navigation with numpy
   labeled_df = df.copy()
@@ -61,8 +66,8 @@ def a_kmeans(df:pd.DataFrame, k:int, max_training_iter = 300, cent_disp_threshol
     ## handles the variation of candidate models
     model_rng = np.random.default_rng(training_seeds[n])
 
-    ## updated structures survive inner scope 
-
+    ## these updated structures survive inner scope:
+   
     # initial centroids
     centroids_idx = model_rng.choice(matrix.shape[0],k,replace=False)
     current_centroids= matrix[centroids_idx,:]
@@ -133,7 +138,7 @@ def a_kmeans(df:pd.DataFrame, k:int, max_training_iter = 300, cent_disp_threshol
             'cluster_SSE': clusterSSE, 
             'centroids': current_centroids})
     
-  # returns model candidate with smallest sse
+  # stores model candidate with smallest sse
   best_model = min(model_candidates, key = lambda m: m['model_SSE'])
 
   #replaces best model labels with updated df
@@ -159,11 +164,9 @@ if __name__ == "__main__":
   # reads in df 
   df = pd.read_csv("data_2D.txt", sep='\s+', header=None, names=['x_1','x_2'])
 
+  print("\n~~~~~~~~~~~~~~~~~~~~~~~~~\n Shows proper data import:\n~~~~~~~~~~~~~~~~~~~~~~~~~")
+
   print(f"""
-  ~~~~~~~~~~~~~~~~~~~~~~~~~
-  Shows proper data import:
-  ~~~~~~~~~~~~~~~~~~~~~~~~~
-  
   Dataframe rows and columns:{df.shape}
 
   Dataframe Preview:
@@ -173,11 +176,10 @@ if __name__ == "__main__":
   kmeans_model = a_kmeans(df,8)
 
 
+  #### Non-optimized example of my implementation
+  print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\nExample of model from my implementation:\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+
   print(f"""
-  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  Example of model from my implementation:
-  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        
   dataframe with labels added:
     {kmeans_model['labeled_df']}
 
@@ -210,11 +212,7 @@ if __name__ == "__main__":
   print(f"plots/example.pdf has been created")
   # finds optimal k for model
 
-  print(f"""
-  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  Best K-value: Personal vs skLearn K-means implementation
-  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  """)
+  print(f"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\nBest K-value: Personal vs skLearn K-means implementation\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
   # personal implementation models
   models = {}
@@ -300,3 +298,33 @@ if __name__ == "__main__":
   plt.close()
 
   print(f"plots/skBestScatter.pdf has been created")
+
+  print("\n~~~~~~~~~~~~~~\nSSE Distortion\n~~~~~~~~~~~~~~")
+
+  print(f"""
+    My Model SSE: {candidate_SSEs[4]}
+    SKlearn SSE: {skSSEs[4]}
+  """)
+
+  ##### assignment cluster comparison #####
+
+
+  print(f"\n~~~~~~~~~~~~~~~~~~\nCluster Comparison\n~~~~~~~~~~~~~~~~~~")
+
+  # aligns sklearn's labels to my labels based on membership agreement
+  myLabels = my_labeled_df['cluster_labels']
+  skLabels = sk_labeled_df['cluster_labels']
+
+  cm = confusion_matrix(myLabels, skLabels)
+
+  # Hungarian algorithm implementation: finds label alignment 
+  row_ind, col_ind = linear_sum_assignment(-cm)
+  mapping = dict(zip(col_ind, row_ind))
+
+  # remap sklearn labels
+  sk_labeled_df['aligned_labels'] = np.array([mapping[l] for l in skLabels])
+
+  print(f"""
+    Comparative Clusters ARI score = {adjusted_rand_score(myLabels,skLabels)}
+  """)
+  
