@@ -1,0 +1,8 @@
+/* Left-align all Markdown tables */
+table {
+    text-align: left;
+}
+
+table th, table td {
+    text-align: left;
+}
