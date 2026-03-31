@@ -14,4 +14,4 @@ This repository is for collecting course assignments for the Masters Level Machi
 
 1. Assignment 0:  [assignment overview](Assignment0/UHart_25Fall_MachineLearning_HW0.pdf); [code/report](Assignment0/J_Bennett_ML_assignment0/ML-F25_Assignment0-JB.pdf)
   - assignment focuses on cleaning and basic analysis of datasets, including visualization of data
-2.  Assignment 1 [assignment overview](Assignment1/UHart_25Fall_MachineLearning_HW1.pdf); [code](Assignment1/J_Bennett_ML_assignment1/Assinment1-JBennett.py); [report](Assignment1/J_Bennett_ML_assignment1/ML_Assignment1_JBennett.pdf)
+2.  Assignment 1 [assignment overview](Assignment1/UHart_25Fall_MachineLearning_HW1.pdf); [code](Assignment1/J_Bennett_ML_assignment1/Assinment1_JBennett.py); [report](Assignment1/J_Bennett_ML_assignment1/ML_Assignment1_JBennett.pdf)
