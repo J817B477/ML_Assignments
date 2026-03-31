@@ -18,4 +18,4 @@ This repository is for collecting course assignments for the Masters Level Machi
     - assignment focuses on generation and evaluation of Random Forest Classifier 
 3. Assignment 2:  [assignment overview](Assignment2/UHart_25Fall_MachineLearning_HW2.pdf); [code](Assignment2/Assignment2_JBennett.py); [report](Assignment2/ML_Assignment2_JBennett.pdf)
     - assignment focuses on generation and evaluation of K-nearest neighbors Classifier
-5. Assignment 3:  [assignment overview](Assignment3/UHart_25Fall_MachineLearning_HW3.pdf); [code](Assignment3/Assignment3_JB.py); [report](Assignment3/ML_Assignment3_JB.pdf)
+5. Assignment 3:  [assignment overview](Assignment3/UHart_25Fall_MachineLearning_HW3.pdf); [code](Assignment3/Assignment3_JBennett.py); [report](Assignment3/ML_Assignment3_JB.pdf)
