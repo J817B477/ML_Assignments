@@ -22,4 +22,4 @@ This repository is for collecting course assignments for the Masters Level Machi
     - assignment focuses on generating and evaluating multiple linear regression prediction model
 5. Assignment 4: [assignment overview](Assignment4/UHart_25Fall_MachineLearning_HW4_SVM.pdf); [model_code](Assignment4/TrainSVC.py); [results_code](Assignment4/parse_results.py); [helper_shell_script](Assignment4/genreate_models.sh); [report](Assignment4/ML_Assignment4Report_JBennett.pdf)
     - assignment focuses on generating and evaluating Support Vector Machine Classifier
-6. Assignment 5:  [assignment overview](Assignment5/UHart_25Fall_MachineLearning_HW5.pdf); [model_code](Assignment5/ML_Assignment5.py); [report](Assignment5/ML_Assignment5_JBennett.pdf)
+6. Assignment 5:  [assignment overview](Assignment5/UHart_25Fall_MachineLearning_HW5.pdf); [model_code](Assignment5/ML_Assignment5.py); [report](Assignment5/ML_Assignment_5_JBennett.pdf)
