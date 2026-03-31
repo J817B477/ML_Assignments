@@ -24,3 +24,4 @@ This repository is for collecting course assignments for the Masters Level Machi
     - assignment focuses on generating and evaluating Support Vector Machine Classifier
 6. Assignment 5:  [assignment overview](Assignment5/UHart_25Fall_MachineLearning_HW5.pdf); [model_code](Assignment5/ML_Assignment5.py); [report](Assignment5/ML_Assignment_5_JBennett.pdf)
     - assignment focuses on personal implementation of kmeans algorithm and comparative analysis between its results and the results of sklearn's implementation on the same data
+7. Assignment 6: [assignment overview](Assignment6/UHart_25Fall_MachineLearning_HW6.pdf); [train_code](Assignment6/NN_train.py); [test_code](Assignment6/NN_test.py); [tuning_code](Assignment6/tune_hyperParams.sh); [report](Assignment6/ML_Assignment6_Report.pdf)
