@@ -10,4 +10,6 @@
   <h3>
 </p>
 
-This repository is for collecting course assignments and for submitting those assignments
+This repository is for collecting course assignments for the Masters Level Machine Learning course that I took during my final semester of my Data Science undergraduate degree at the UNiversity of Hartford. Each assignment includes assignment, code, and report generated for analysis of results. Assignment 0 was completed in jupyter notebook using a python kernel. The remaining assigmnents was completed using python scripts (and a few shell scripts for tuning hyperpaermeters) and the repost was generated with latex in overleaf.
+
+1. Assigment 0 [assignment overview](Assignment0/UHart_25Fall_MachineLearning_HW0.pdf) [code/report](Assignment0/J_Bennett_ML_assignment0/ML-F25_Assignment0-JB.pdf)
